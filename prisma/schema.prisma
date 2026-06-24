@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LoanStatus {
+  ACTIVE
+  RETURNED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  loans     Loan[]
+}
+
+model Author {
+  id        Int      @id @default(autoincrement())
+  name      String
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  books     Book[]
+}
+
+model Book {
+  id            Int            @id @default(autoincrement())
+  title         String
+  description   String?
+  publishedYear Int?
+  available     Boolean        @default(true)
+  authorId      Int
+  author        Author         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  categories    BookCategory[]
+  loans         Loan[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([authorId])
+}
+
+model Category {
+  id        Int            @id @default(autoincrement())
+  name      String         @unique
+  books     BookCategory[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model BookCategory {
+  id         Int      @id @default(autoincrement())
+  bookId     Int
+  categoryId Int
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, categoryId])
+  @@index([bookId])
+  @@index([categoryId])
+}
+
+model Loan {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  bookId     Int
+  user       User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  book       Book       @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  loanDate   DateTime   @default(now())
+  returnDate DateTime?
+  status     LoanStatus @default(ACTIVE)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+}
