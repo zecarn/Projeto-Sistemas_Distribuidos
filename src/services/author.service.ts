@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ApiError } from "@/lib/api";
+import { AppError } from "@/lib/errors/AppError";
 import { authorSchema, validate } from "@/lib/validations";
 
 const data = (input: Record<string, unknown>) => validate(authorSchema, input);
@@ -11,7 +11,7 @@ export const authorService = {
   }),
   async get(id: number) {
     const author = await prisma.author.findUnique({ where: { id }, include: { books: true } });
-    if (!author) throw new ApiError(404, "Autor não encontrado.");
+    if (!author) throw new AppError("Autor não encontrado.", 404);
     return author;
   },
   create: (input: Record<string, unknown>) => prisma.author.create({ data: data(input) }),
@@ -22,7 +22,7 @@ export const authorService = {
   async remove(id: number) {
     const author = await this.get(id);
     if (author.books.length > 0) {
-      throw new ApiError(409, "Não é possível excluir o autor porque há livros vinculados.");
+      throw new AppError("Não é possível excluir o autor porque há livros vinculados.", 409);
     }
     return prisma.author.delete({ where: { id } });
   },

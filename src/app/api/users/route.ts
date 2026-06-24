@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { handleApiError, readJson } from "@/lib/api";
+import { readJson } from "@/lib/api";
+import { handleApiError } from "@/lib/errors/handleApiError";
 import { userService } from "@/services/user.service";
 
 export async function GET() {

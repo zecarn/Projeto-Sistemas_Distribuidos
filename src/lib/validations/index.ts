@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { ApiError } from "@/lib/api";
+import { AppError } from "@/lib/errors/AppError";
 
 export function validate<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
   if (!result.success) {
-    throw new ApiError(400, result.error.issues[0]?.message ?? "Dados inválidos.");
+    throw new AppError(result.error.issues[0]?.message ?? "Dados inválidos.", 400);
   }
   return result.data;
 }

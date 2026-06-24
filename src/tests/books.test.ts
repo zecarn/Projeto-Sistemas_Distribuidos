@@ -50,7 +50,7 @@ describe("bookService", () => {
   it("exige que o autor exista", async () => {
     prismaMock.author.findUnique.mockResolvedValue(null);
     await expect(bookService.create({ title: "Livro", authorId: 99 })).rejects.toMatchObject({
-      status: 404, message: "Autor não encontrado.",
+      statusCode: 404, message: "Autor não encontrado.",
     });
     expect(prismaMock.book.create).not.toHaveBeenCalled();
   });
@@ -84,7 +84,7 @@ describe("bookService", () => {
       id: 1, loans: [{ id: 10, status: LoanStatus.ACTIVE }], categories: [], author: {},
     });
     await expect(bookService.remove(1)).rejects.toMatchObject({
-      status: 409,
+      statusCode: 409,
       message: "Não é possível excluir o livro porque há empréstimos ativos.",
     });
     expect(prismaMock.book.delete).not.toHaveBeenCalled();

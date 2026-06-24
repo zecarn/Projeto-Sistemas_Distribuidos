@@ -11,7 +11,7 @@ vi.mock("@/services/author.service", () => ({ authorService: authorMock }));
 import { GET as listBooks, POST as createBook } from "@/app/api/books/route";
 import { DELETE as deleteBook, GET as getBook, PUT as updateBook } from "@/app/api/books/[id]/route";
 import { POST as createAuthor } from "@/app/api/authors/route";
-import { ApiError } from "@/lib/api";
+import { AppError } from "@/lib/errors/AppError";
 
 const context = (id: string) => ({ params: Promise.resolve({ id }) });
 
@@ -40,7 +40,7 @@ describe("Route Handlers da biblioteca", () => {
   });
 
   it("GET /api/books/:id retorna 404 quando ausente", async () => {
-    bookMock.get.mockRejectedValue(new ApiError(404, "Livro não encontrado."));
+    bookMock.get.mockRejectedValue(new AppError("Livro não encontrado.", 404));
     const response = await getBook(new Request("http://localhost"), context("99"));
     expect(response.status).toBe(404);
   });

@@ -37,7 +37,7 @@ describe("loanService", () => {
   it("verifica a existência do usuário", async () => {
     txMock.user.findUnique.mockResolvedValue(null);
     await expect(loanService.create({ userId: 99, bookId: 1 })).rejects.toMatchObject({
-      status: 404, message: "Usuário não encontrado.",
+      statusCode: 404, message: "Usuário não encontrado.",
     });
     expect(txMock.book.findUnique).not.toHaveBeenCalled();
   });
@@ -46,7 +46,7 @@ describe("loanService", () => {
     txMock.user.findUnique.mockResolvedValue({ id: 1 });
     txMock.book.findUnique.mockResolvedValue({ id: 2, available: false });
     await expect(loanService.create({ userId: 1, bookId: 2 })).rejects.toMatchObject({
-      status: 409, message: "O livro não está disponível para empréstimo.",
+      statusCode: 409, message: "O livro não está disponível para empréstimo.",
     });
     expect(txMock.loan.create).not.toHaveBeenCalled();
   });
@@ -81,7 +81,7 @@ describe("loanService", () => {
   it("não deve devolver empréstimo já devolvido", async () => {
     txMock.loan.findUnique.mockResolvedValue({ id: 3, bookId: 2, status: LoanStatus.RETURNED });
     await expect(loanService.returnBook(3)).rejects.toMatchObject({
-      status: 409, message: "Este empréstimo já foi devolvido.",
+      statusCode: 409, message: "Este empréstimo já foi devolvido.",
     });
     expect(txMock.loan.updateMany).not.toHaveBeenCalled();
     expect(txMock.book.update).not.toHaveBeenCalled();
@@ -90,7 +90,7 @@ describe("loanService", () => {
   it("só exclui empréstimos devolvidos", async () => {
     prismaMock.loan.findUnique.mockResolvedValue({ id: 1, status: LoanStatus.ACTIVE });
     await expect(loanService.remove(1)).rejects.toMatchObject({
-      status: 409, message: "Somente empréstimos devolvidos podem ser excluídos.",
+      statusCode: 409, message: "Somente empréstimos devolvidos podem ser excluídos.",
     });
     prismaMock.loan.findUnique.mockResolvedValue({ id: 1, status: LoanStatus.RETURNED });
     prismaMock.loan.delete.mockResolvedValue({ id: 1 });

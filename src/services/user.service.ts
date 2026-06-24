@@ -1,6 +1,6 @@
 import { LoanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ApiError } from "@/lib/api";
+import { AppError } from "@/lib/errors/AppError";
 import { userSchema, validate } from "@/lib/validations";
 
 const userData = (input: Record<string, unknown>) => validate(userSchema, input);
@@ -21,14 +21,14 @@ export const userService = {
         },
       },
     });
-    if (!user) throw new ApiError(404, "Usuário não encontrado.");
+    if (!user) throw new AppError("Usuário não encontrado.", 404);
     return user;
   },
 
   async create(input: Record<string, unknown>) {
     const payload = userData(input);
     const existing = await prisma.user.findUnique({ where: { email: payload.email } });
-    if (existing) throw new ApiError(409, "Já existe um usuário com esse email.");
+    if (existing) throw new AppError("Já existe um usuário com esse email.", 409);
     return prisma.user.create({ data: payload });
   },
 
@@ -38,14 +38,14 @@ export const userService = {
     const duplicate = await prisma.user.findFirst({
       where: { email: payload.email, NOT: { id } },
     });
-    if (duplicate) throw new ApiError(409, "Já existe um usuário com esse email.");
+    if (duplicate) throw new AppError("Já existe um usuário com esse email.", 409);
     return prisma.user.update({ where: { id }, data: payload });
   },
 
   async remove(id: number) {
     const user = await this.get(id);
     if (user.loans.some((loan) => loan.status === LoanStatus.ACTIVE)) {
-      throw new ApiError(409, "Não é possível excluir o usuário porque há empréstimos ativos.");
+      throw new AppError("Não é possível excluir o usuário porque há empréstimos ativos.", 409);
     }
     const [, deletedUser] = await prisma.$transaction([
       prisma.loan.deleteMany({ where: { userId: id } }),

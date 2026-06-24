@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { handleApiError, parseId, readJson } from "@/lib/api";
+import { parseId, readJson } from "@/lib/api";
+import { handleApiError } from "@/lib/errors/handleApiError";
 import { authorService } from "@/services/author.service";
 
 type Context = { params: Promise<{ id: string }> };

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ApiError } from "@/lib/api";
+import { AppError } from "@/lib/errors/AppError";
 import { categorySchema, validate } from "@/lib/validations";
 
 const data = (input: Record<string, unknown>) => validate(categorySchema, input);
@@ -14,13 +14,13 @@ export const categoryService = {
       where: { id },
       include: { books: { include: { book: true } } },
     });
-    if (!category) throw new ApiError(404, "Categoria não encontrada.");
+    if (!category) throw new AppError("Categoria não encontrada.", 404);
     return category;
   },
   async create(input: Record<string, unknown>) {
     const payload = data(input);
     const existing = await prisma.category.findUnique({ where: { name: payload.name } });
-    if (existing) throw new ApiError(409, "Já existe uma categoria com esse nome.");
+    if (existing) throw new AppError("Já existe uma categoria com esse nome.", 409);
     return prisma.category.create({ data: payload });
   },
   async update(id: number, input: Record<string, unknown>) {
@@ -29,7 +29,7 @@ export const categoryService = {
     const duplicate = await prisma.category.findFirst({
       where: { name: payload.name, NOT: { id } },
     });
-    if (duplicate) throw new ApiError(409, "Já existe uma categoria com esse nome.");
+    if (duplicate) throw new AppError("Já existe uma categoria com esse nome.", 409);
     return prisma.category.update({ where: { id }, data: payload });
   },
   async remove(id: number) {

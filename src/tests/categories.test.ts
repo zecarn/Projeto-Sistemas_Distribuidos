@@ -41,7 +41,7 @@ describe("categoryService", () => {
   it("não deve criar categoria duplicada", async () => {
     prismaMock.category.findUnique.mockResolvedValue({ id: 1, name: "Romance" });
     await expect(categoryService.create({ name: "Romance" })).rejects.toMatchObject({
-      status: 409, message: "Já existe uma categoria com esse nome.",
+      statusCode: 409, message: "Já existe uma categoria com esse nome.",
     });
   });
 

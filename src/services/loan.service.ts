@@ -1,6 +1,6 @@
 import { LoanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ApiError } from "@/lib/api";
+import { AppError } from "@/lib/errors/AppError";
 import { loanCreateSchema, loanUpdateSchema, validate } from "@/lib/validations";
 
 const include = { user: true, book: true } as const;
@@ -16,7 +16,7 @@ export const loanService = {
 
   async get(id: number) {
     const loan = await prisma.loan.findUnique({ where: { id }, include });
-    if (!loan) throw new ApiError(404, "Empréstimo não encontrado.");
+    if (!loan) throw new AppError("Empréstimo não encontrado.", 404);
     return loan;
   },
 
@@ -25,17 +25,17 @@ export const loanService = {
 
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true } });
-      if (!user) throw new ApiError(404, "Usuário não encontrado.");
+      if (!user) throw new AppError("Usuário não encontrado.", 404);
 
       const book = await tx.book.findUnique({ where: { id: bookId }, select: { id: true, available: true } });
-      if (!book) throw new ApiError(404, "Livro não encontrado.");
-      if (!book.available) throw new ApiError(409, "O livro não está disponível para empréstimo.");
+      if (!book) throw new AppError("Livro não encontrado.", 404);
+      if (!book.available) throw new AppError("O livro não está disponível para empréstimo.", 409);
 
       const reservation = await tx.book.updateMany({
         where: { id: bookId, available: true },
         data: { available: false },
       });
-      if (reservation.count !== 1) throw new ApiError(409, "O livro não está disponível para empréstimo.");
+      if (reservation.count !== 1) throw new AppError("O livro não está disponível para empréstimo.", 409);
 
       return tx.loan.create({
         data: { userId, bookId, status: LoanStatus.ACTIVE },
@@ -47,12 +47,12 @@ export const loanService = {
   async update(id: number, input: Record<string, unknown>) {
     await this.get(id);
     if ("status" in input || "bookId" in input) {
-      throw new ApiError(400, "Use a rota de devolução para alterar o status ou o livro do empréstimo.");
+      throw new AppError("Use a rota de devolução para alterar o status ou o livro do empréstimo.", 400);
     }
     const data = validate(loanUpdateSchema, input);
     if (data.userId !== undefined) {
       const user = await prisma.user.findUnique({ where: { id: data.userId }, select: { id: true } });
-      if (!user) throw new ApiError(404, "Usuário não encontrado.");
+      if (!user) throw new AppError("Usuário não encontrado.", 404);
     }
     return prisma.loan.update({ where: { id }, data, include });
   },
@@ -60,14 +60,14 @@ export const loanService = {
   returnBook(id: number) {
     return prisma.$transaction(async (tx) => {
       const loan = await tx.loan.findUnique({ where: { id }, include });
-      if (!loan) throw new ApiError(404, "Empréstimo não encontrado.");
-      if (loan.status === LoanStatus.RETURNED) throw new ApiError(409, "Este empréstimo já foi devolvido.");
+      if (!loan) throw new AppError("Empréstimo não encontrado.", 404);
+      if (loan.status === LoanStatus.RETURNED) throw new AppError("Este empréstimo já foi devolvido.", 409);
 
       const returned = await tx.loan.updateMany({
         where: { id, status: LoanStatus.ACTIVE },
         data: { status: LoanStatus.RETURNED, returnDate: new Date() },
       });
-      if (returned.count !== 1) throw new ApiError(409, "Este empréstimo já foi devolvido.");
+      if (returned.count !== 1) throw new AppError("Este empréstimo já foi devolvido.", 409);
 
       await tx.book.update({ where: { id: loan.bookId }, data: { available: true } });
       return tx.loan.findUniqueOrThrow({ where: { id }, include });
@@ -77,7 +77,7 @@ export const loanService = {
   async remove(id: number) {
     const loan = await this.get(id);
     if (loan.status !== LoanStatus.RETURNED) {
-      throw new ApiError(409, "Somente empréstimos devolvidos podem ser excluídos.");
+      throw new AppError("Somente empréstimos devolvidos podem ser excluídos.", 409);
     }
     return prisma.loan.delete({ where: { id } });
   },

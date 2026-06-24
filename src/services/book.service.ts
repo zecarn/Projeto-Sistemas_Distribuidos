@@ -1,6 +1,6 @@
 import { LoanStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ApiError } from "@/lib/api";
+import { AppError } from "@/lib/errors/AppError";
 import { bookCreateSchema, bookUpdateSchema, validate } from "@/lib/validations";
 
 const listInclude = {
@@ -26,14 +26,14 @@ export const bookService = {
 
   async get(id: number) {
     const book = await prisma.book.findUnique({ where: { id }, include: detailInclude });
-    if (!book) throw new ApiError(404, "Livro não encontrado.");
+    if (!book) throw new AppError("Livro não encontrado.", 404);
     return book;
   },
 
   async create(input: Record<string, unknown>) {
     const payload = validate(bookCreateSchema, input);
     const author = await prisma.author.findUnique({ where: { id: payload.authorId }, select: { id: true } });
-    if (!author) throw new ApiError(404, "Autor não encontrado.");
+    if (!author) throw new AppError("Autor não encontrado.", 404);
     const categoryIds = [...new Set(payload.categoryIds)];
     return prisma.book.create({
       data: {
@@ -53,7 +53,7 @@ export const bookService = {
     const { categoryIds: rawCategoryIds, ...data } = payload;
     if (data.authorId !== undefined) {
       const author = await prisma.author.findUnique({ where: { id: data.authorId }, select: { id: true } });
-      if (!author) throw new ApiError(404, "Autor não encontrado.");
+      if (!author) throw new AppError("Autor não encontrado.", 404);
     }
     const categoryIds = rawCategoryIds === undefined ? undefined : [...new Set(rawCategoryIds)];
     return prisma.book.update({
@@ -71,7 +71,7 @@ export const bookService = {
   async remove(id: number) {
     const book = await this.get(id);
     if (book.loans.some((loan) => loan.status === LoanStatus.ACTIVE)) {
-      throw new ApiError(409, "Não é possível excluir o livro porque há empréstimos ativos.");
+      throw new AppError("Não é possível excluir o livro porque há empréstimos ativos.", 409);
     }
 
     const [, , deletedBook] = await prisma.$transaction([

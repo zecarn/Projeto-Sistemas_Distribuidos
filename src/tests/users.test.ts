@@ -46,7 +46,7 @@ describe("userService", () => {
   it("não deve criar usuário com email duplicado", async () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: 1, email: "ana@example.com" });
     await expect(userService.create({ name: "Ana", email: "ANA@EXAMPLE.COM" })).rejects.toMatchObject({
-      status: 409, message: "Já existe um usuário com esse email.",
+      statusCode: 409, message: "Já existe um usuário com esse email.",
     });
     expect(prismaMock.user.findUnique).toHaveBeenCalledWith({ where: { email: "ana@example.com" } });
   });
@@ -63,7 +63,7 @@ describe("userService", () => {
   it("não deve excluir usuário com empréstimo ativo", async () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: 1, loans: [{ status: LoanStatus.ACTIVE }] });
     await expect(userService.remove(1)).rejects.toMatchObject({
-      status: 409, message: "Não é possível excluir o usuário porque há empréstimos ativos.",
+      statusCode: 409, message: "Não é possível excluir o usuário porque há empréstimos ativos.",
     });
     expect(prismaMock.user.delete).not.toHaveBeenCalled();
   });
