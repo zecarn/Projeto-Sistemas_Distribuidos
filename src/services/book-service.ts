@@ -1,56 +1,122 @@
+import { LoanStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError, requiredString } from "@/lib/api";
 
-const include = { author: true, categories: { include: { category: true } } } as const;
+const listInclude = {
+  author: true,
+  categories: { include: { category: true } },
+} as const;
 
-function bookData(input: Record<string, unknown>) {
-  const authorId = Number(input.authorId);
-  const categoryIds = Array.isArray(input.categoryIds) ? input.categoryIds.map(Number) : [];
-  const publishedYear = input.publishedYear === null || input.publishedYear === "" || input.publishedYear === undefined
-    ? null : Number(input.publishedYear);
+const detailInclude = {
+  ...listInclude,
+  loans: { include: { user: true }, orderBy: { loanDate: "desc" as const } },
+} as const;
+
+export type BookFilters = { title?: string; authorId?: number; categoryId?: number };
+
+function optionalText(value: unknown, field: string) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "string") throw new ApiError(400, `${field} inválido.`);
+  return value.trim() || null;
+}
+
+function optionalYear(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+  const year = Number(value);
+  if (!Number.isInteger(year) || year < 0 || year > 9999) throw new ApiError(400, "publishedYear inválido.");
+  return year;
+}
+
+function validAuthorId(value: unknown) {
+  const authorId = Number(value);
   if (!Number.isInteger(authorId) || authorId <= 0) throw new ApiError(400, "authorId inválido.");
-  if (!categoryIds.length || categoryIds.some((id) => !Number.isInteger(id) || id <= 0)) {
-    throw new ApiError(400, "Informe ao menos um categoryId válido.");
+  return authorId;
+}
+
+function categoryIdsFrom(value: unknown) {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) throw new ApiError(400, "categoryIds deve ser uma lista.");
+  const categoryIds = [...new Set(value.map(Number))];
+  if (categoryIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+    throw new ApiError(400, "categoryIds contém um ID inválido.");
   }
-  if (publishedYear !== null && !Number.isInteger(publishedYear)) throw new ApiError(400, "publishedYear inválido.");
-  return {
-    scalar: {
-      title: requiredString(input.title, "title"),
-      description: typeof input.description === "string" && input.description.trim() ? input.description.trim() : null,
-      publishedYear,
-      available: typeof input.available === "boolean" ? input.available : true,
-      authorId,
-    },
-    categoryIds: [...new Set(categoryIds)],
-  };
+  return categoryIds;
 }
 
 export const bookService = {
-  list: () => prisma.book.findMany({ include, orderBy: { title: "asc" } }),
+  list(filters: BookFilters = {}) {
+    const where: Prisma.BookWhereInput = {};
+    if (filters.title) where.title = { contains: filters.title, mode: "insensitive" };
+    if (filters.authorId) where.authorId = filters.authorId;
+    if (filters.categoryId) where.categories = { some: { categoryId: filters.categoryId } };
+    return prisma.book.findMany({ where, include: listInclude, orderBy: { title: "asc" } });
+  },
+
   async get(id: number) {
-    const book = await prisma.book.findUnique({ where: { id }, include });
+    const book = await prisma.book.findUnique({ where: { id }, include: detailInclude });
     if (!book) throw new ApiError(404, "Livro não encontrado.");
     return book;
   },
+
   create(input: Record<string, unknown>) {
-    const data = bookData(input);
+    const title = requiredString(input.title, "title");
+    const authorId = validAuthorId(input.authorId);
+    const categoryIds = categoryIdsFrom(input.categoryIds) ?? [];
     return prisma.book.create({
-      data: { ...data.scalar, categories: { create: data.categoryIds.map((categoryId) => ({ categoryId })) } }, include,
+      data: {
+        title,
+        description: optionalText(input.description, "description"),
+        publishedYear: optionalYear(input.publishedYear),
+        authorId,
+        categories: { create: categoryIds.map((categoryId) => ({ categoryId })) },
+      },
+      include: listInclude,
     });
   },
+
   async update(id: number, input: Record<string, unknown>) {
     await this.get(id);
-    const data = bookData(input);
-    return prisma.$transaction(async (tx) => {
-      await tx.bookCategory.deleteMany({ where: { bookId: id } });
-      return tx.book.update({
-        where: { id },
-        data: { ...data.scalar, categories: { create: data.categoryIds.map((categoryId) => ({ categoryId })) } }, include,
-      });
+    const data: {
+      title?: string;
+      description?: string | null;
+      publishedYear?: number | null;
+      authorId?: number;
+      available?: boolean;
+    } = {};
+
+    if ("title" in input) data.title = requiredString(input.title, "title");
+    if ("description" in input) data.description = optionalText(input.description, "description");
+    if ("publishedYear" in input) data.publishedYear = optionalYear(input.publishedYear);
+    if ("authorId" in input) data.authorId = validAuthorId(input.authorId);
+    if ("available" in input) {
+      if (typeof input.available !== "boolean") throw new ApiError(400, "available deve ser booleano.");
+      data.available = input.available;
+    }
+
+    const categoryIds = categoryIdsFrom(input.categoryIds);
+    return prisma.book.update({
+      where: { id },
+      data: {
+        ...data,
+        ...(categoryIds === undefined
+          ? {}
+          : { categories: { deleteMany: {}, create: categoryIds.map((categoryId) => ({ categoryId })) } }),
+      },
+      include: listInclude,
     });
   },
+
   async remove(id: number) {
-    await this.get(id);
-    return prisma.book.delete({ where: { id } });
+    const book = await this.get(id);
+    if (book.loans.some((loan) => loan.status === LoanStatus.ACTIVE)) {
+      throw new ApiError(409, "Não é possível excluir o livro porque há empréstimos ativos.");
+    }
+
+    const [, , deletedBook] = await prisma.$transaction([
+      prisma.bookCategory.deleteMany({ where: { bookId: id } }),
+      prisma.loan.deleteMany({ where: { bookId: id } }),
+      prisma.book.delete({ where: { id } }),
+    ]);
+    return deletedBook;
   },
 };

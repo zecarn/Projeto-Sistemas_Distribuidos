@@ -20,7 +20,7 @@ describe("Route Handlers da biblioteca", () => {
 
   it("GET /api/books lista livros", async () => {
     bookMock.list.mockResolvedValue([{ id: 1, title: "Dom Casmurro" }]);
-    const response = await listBooks();
+    const response = await listBooks(new Request("http://localhost/api/books"));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([{ id: 1, title: "Dom Casmurro" }]);
   });
@@ -53,10 +53,11 @@ describe("Route Handlers da biblioteca", () => {
     expect(bookMock.update).toHaveBeenCalledWith(1, payload);
   });
 
-  it("DELETE /api/books/:id retorna 204", async () => {
+  it("DELETE /api/books/:id retorna JSON de sucesso", async () => {
     bookMock.remove.mockResolvedValue({ id: 1 });
     const response = await deleteBook(new Request("http://localhost"), context("1"));
-    expect(response.status).toBe(204);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ message: "Livro excluído com sucesso.", book: { id: 1 } });
   });
 
   it("POST /api/authors rejeita JSON inválido", async () => {

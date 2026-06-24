@@ -22,8 +22,8 @@ export async function PUT(request: Request, { params }: Context) {
 
 export async function DELETE(_: Request, { params }: Context) {
   try {
-    await bookService.remove(parseId((await params).id));
-    return new NextResponse(null, { status: 204 });
+    const book = await bookService.remove(parseId((await params).id));
+    return NextResponse.json({ message: "Livro excluído com sucesso.", book });
   } catch (error) {
     return handleApiError(error);
   }
