@@ -36,7 +36,7 @@ export default function DashboardPage() {
       </section>
       <section className="mt-8 rounded-2xl bg-orange-100/70 p-6">
         <h2 className="text-lg font-bold">Modelo de dados</h2>
-        <p className="mt-2 text-sm text-black/65">Cada livro pertence a uma categoria (N:1) e pode ter diversos autores; cada autor pode participar de diversos livros (N:M).</p>
+        <p className="mt-2 text-sm text-black/65">Cada autor pode possuir vários livros (1:N), e livros podem participar de várias categorias por meio de BookCategory (N:M).</p>
       </section>
     </>
   );

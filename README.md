@@ -6,8 +6,9 @@ Aplicação full stack para gerenciar livros, autores e categorias. Construída 
 
 - Painel com totais e disponibilidade do acervo;
 - cadastro, listagem, edição e exclusão por API de livros, autores e categorias;
-- associação de um livro a uma categoria (**N:1**);
-- associação de vários autores a vários livros (**N:M**);
+- associação de um autor a vários livros (**1:N**);
+- associação de livros a várias categorias por `BookCategory` (**N:M**);
+- registro de empréstimos entre usuários e livros;
 - controle de disponibilidade dos livros;
 - respostas HTTP consistentes para validação, conflito e registros ausentes;
 - 4 telas: painel, livros, autores e categorias.
@@ -114,11 +115,11 @@ Exemplo para criar um livro:
 ```json
 {
   "title": "Clean Architecture",
-  "isbn": "9780134494166",
-  "categoryId": 1,
-  "authorIds": [1],
-  "available": true,
-  "publishedAt": "2017-09-20"
+  "description": "Princípios de arquitetura de software",
+  "publishedYear": 2017,
+  "authorId": 1,
+  "categoryIds": [1, 2],
+  "available": true
 }
 ```
 
@@ -146,8 +147,8 @@ npm run build
 - migrations versionadas e `.env` fora do Git;
 - validação na fronteira HTTP e status adequados (`201`, `204`, `400`, `404`, `409`, `500`);
 - services separados dos handlers para reduzir acoplamento e facilitar testes;
-- constraints e índices no banco (`unique` para ISBN/categoria e índice da chave estrangeira);
-- deleção restrita de categorias em uso e cascade apenas na tabela de junção N:M;
+- constraints e índices no banco (`unique` para e-mail/categoria e chaves estrangeiras indexadas);
+- deleção restrita nos empréstimos e cascade apenas na tabela de junção N:M;
 - seed idempotente para categorias e livros de exemplo.
 
 Em produção, use uma credencial de banco exclusiva, mantenha segredos no provedor de deploy, execute `prisma migrate deploy` no pipeline e adicione autenticação/autorização antes de expor operações administrativas.

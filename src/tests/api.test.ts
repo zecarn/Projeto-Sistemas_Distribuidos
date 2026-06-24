@@ -26,7 +26,7 @@ describe("Route Handlers da biblioteca", () => {
   });
 
   it("POST /api/books cria um livro e retorna 201", async () => {
-    const payload = { title: "Livro", isbn: "123", categoryId: 1, authorIds: [2] };
+    const payload = { title: "Livro", authorId: 2, categoryIds: [1] };
     bookMock.create.mockResolvedValue({ id: 3, ...payload });
     const response = await createBook(new Request("http://localhost/api/books", { method: "POST", body: JSON.stringify(payload) }));
     expect(response.status).toBe(201);
@@ -46,7 +46,7 @@ describe("Route Handlers da biblioteca", () => {
   });
 
   it("PUT /api/books/:id atualiza o livro", async () => {
-    const payload = { title: "Novo", isbn: "456", categoryId: 1, authorIds: [1] };
+    const payload = { title: "Novo", authorId: 1, categoryIds: [1] };
     bookMock.update.mockResolvedValue({ id: 1, ...payload });
     const response = await updateBook(new Request("http://localhost", { method: "PUT", body: JSON.stringify(payload) }), context("1"));
     expect(response.status).toBe(200);

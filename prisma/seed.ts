@@ -2,55 +2,40 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+async function findOrCreateAuthor(name: string, bio: string) {
+  const existing = await prisma.author.findFirst({ where: { name } });
+  return existing ?? prisma.author.create({ data: { name, bio } });
+}
+
 async function main() {
   const tecnologia = await prisma.category.upsert({
-    where: { name: "Tecnologia" },
-    update: {},
-    create: { name: "Tecnologia" },
+    where: { name: "Tecnologia" }, update: {}, create: { name: "Tecnologia" },
   });
   const literatura = await prisma.category.upsert({
-    where: { name: "Literatura" },
-    update: {},
-    create: { name: "Literatura" },
+    where: { name: "Literatura" }, update: {}, create: { name: "Literatura" },
   });
+  const martin = await findOrCreateAuthor("Martin Kleppmann", "Pesquisador de sistemas distribuídos.");
+  const machado = await findOrCreateAuthor("Machado de Assis", "Escritor brasileiro.");
 
-  const martin = await prisma.author.upsert({
-    where: { name: "Martin Kleppmann" },
-    update: {},
-    create: { name: "Martin Kleppmann", biography: "Pesquisador de sistemas distribuídos." },
-  });
-  const machado = await prisma.author.upsert({
-    where: { name: "Machado de Assis" },
-    update: {},
-    create: { name: "Machado de Assis", biography: "Escritor brasileiro." },
-  });
-
-  await prisma.book.upsert({
-    where: { isbn: "9781449373320" },
-    update: {},
-    create: {
-      title: "Designing Data-Intensive Applications",
-      isbn: "9781449373320",
-      categoryId: tecnologia.id,
-      authors: { connect: [{ id: martin.id }] },
-    },
-  });
-  await prisma.book.upsert({
-    where: { isbn: "9788572326972" },
-    update: {},
-    create: {
-      title: "Dom Casmurro",
-      isbn: "9788572326972",
-      categoryId: literatura.id,
-      authors: { connect: [{ id: machado.id }] },
-    },
-  });
+  if (!(await prisma.book.findFirst({ where: { title: "Designing Data-Intensive Applications" } }))) {
+    await prisma.book.create({
+      data: {
+        title: "Designing Data-Intensive Applications", publishedYear: 2017,
+        description: "Fundamentos de sistemas de dados confiáveis e escaláveis.", authorId: martin.id,
+        categories: { create: [{ categoryId: tecnologia.id }] },
+      },
+    });
+  }
+  if (!(await prisma.book.findFirst({ where: { title: "Dom Casmurro" } }))) {
+    await prisma.book.create({
+      data: {
+        title: "Dom Casmurro", publishedYear: 1899, description: "Romance clássico da literatura brasileira.",
+        authorId: machado.id, categories: { create: [{ categoryId: literatura.id }] },
+      },
+    });
+  }
 }
 
 main()
   .then(() => prisma.$disconnect())
-  .catch(async (error) => {
-    console.error(error);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+  .catch(async (error) => { console.error(error); await prisma.$disconnect(); process.exit(1); });

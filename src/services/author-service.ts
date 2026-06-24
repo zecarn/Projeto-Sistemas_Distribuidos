@@ -4,7 +4,7 @@ import { ApiError, requiredString } from "@/lib/api";
 function data(input: Record<string, unknown>) {
   return {
     name: requiredString(input.name, "name"),
-    biography: typeof input.biography === "string" && input.biography.trim() ? input.biography.trim() : null,
+    bio: typeof input.bio === "string" && input.bio.trim() ? input.bio.trim() : null,
   };
 }
 
