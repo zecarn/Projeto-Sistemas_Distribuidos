@@ -30,7 +30,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-biblioteca_db}?schema=public
       NODE_ENV: development
       WATCHPACK_POLLING: "true"
-    command: sh -c "npm install && npx prisma generate && npm run dev -- --hostname 0.0.0.0"
+    # Webpack é usado no dev container para detectar rotas dinâmicas aninhadas
+    # de forma confiável em bind mounts do Docker Desktop no Windows.
+    command: sh -c "npm install && npx prisma generate && npm run dev -- --webpack --hostname 0.0.0.0"
     ports:
       - "${APP_PORT:-3000}:3000"
     volumes:
