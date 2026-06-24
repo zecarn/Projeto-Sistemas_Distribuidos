@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleApiError, readJson } from "@/lib/api";
-import { authorService } from "@/services/author-service";
+import { authorService } from "@/services/author.service";
 
 export async function GET() {
   try {

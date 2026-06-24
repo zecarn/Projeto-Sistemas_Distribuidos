@@ -14,8 +14,7 @@ const { prismaMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-import { ApiError } from "@/lib/api";
-import { authorService } from "@/services/author-service";
+import { authorService } from "@/services/author.service";
 
 describe("authorService", () => {
   beforeEach(() => vi.clearAllMocks());

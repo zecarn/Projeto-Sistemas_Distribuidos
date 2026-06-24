@@ -5,8 +5,8 @@ const { bookMock, authorMock } = vi.hoisted(() => ({
   authorMock: { list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn() },
 }));
 
-vi.mock("@/services/book-service", () => ({ bookService: bookMock }));
-vi.mock("@/services/author-service", () => ({ authorService: authorMock }));
+vi.mock("@/services/book.service", () => ({ bookService: bookMock }));
+vi.mock("@/services/author.service", () => ({ authorService: authorMock }));
 
 import { GET as listBooks, POST as createBook } from "@/app/api/books/route";
 import { DELETE as deleteBook, GET as getBook, PUT as updateBook } from "@/app/api/books/[id]/route";

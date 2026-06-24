@@ -18,7 +18,7 @@ const { prismaMock, txMock } = vi.hoisted(() => {
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-import { loanService } from "@/services/loan-service";
+import { loanService } from "@/services/loan.service";
 
 describe("loanService", () => {
   beforeEach(() => {

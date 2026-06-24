@@ -1,7 +1,7 @@
 import { LoanStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ApiError, handleApiError, readJson } from "@/lib/api";
-import { loanService } from "@/services/loan-service";
+import { loanService } from "@/services/loan.service";
 
 export async function GET(request: Request) {
   try {

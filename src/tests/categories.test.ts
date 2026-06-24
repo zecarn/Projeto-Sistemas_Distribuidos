@@ -13,7 +13,7 @@ const { prismaMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-import { categoryService } from "@/services/category-service";
+import { categoryService } from "@/services/category.service";
 
 describe("categoryService", () => {
   beforeEach(() => vi.clearAllMocks());
