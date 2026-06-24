@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PageHeading } from "@/components/page-heading";
+import { PageTitle } from "@/components/PageTitle";
 import { Feedback } from "@/components/feedback";
+import { Loading } from "@/components/Loading";
 import { BookForm } from "@/components/books/book-form";
 import { BookList } from "@/components/books/book-list";
 import type { Author, Book, Category } from "@/components/books/types";
@@ -12,7 +13,9 @@ export default function BooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
 
@@ -42,6 +45,8 @@ export default function BooksPage() {
       setError("");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setLoading(false);
     }
   }, [search, authorFilter, categoryFilter]);
 
@@ -64,6 +69,7 @@ export default function BooksPage() {
   }) {
     setSaving(true);
     setError("");
+    setSuccess("");
     const payload = {
       title: data.title,
       description: data.description || null,
@@ -76,8 +82,10 @@ export default function BooksPage() {
       if (editing) {
         await api(`/api/books/${editing.id}`, { method: "PUT", body: JSON.stringify(payload) });
         setEditing(null);
+        setSuccess("Livro atualizado com sucesso.");
       } else {
         await api("/api/books", { method: "POST", body: JSON.stringify(payload) });
+        setSuccess("Livro cadastrado com sucesso.");
       }
       await loadBooks();
     } catch (e) {
@@ -89,9 +97,12 @@ export default function BooksPage() {
 
   async function remove(id: number) {
     if (!confirm("Remover este livro?")) return;
+    setError("");
+    setSuccess("");
     try {
       await api(`/api/books/${id}`, { method: "DELETE" });
       if (editing?.id === id) setEditing(null);
+      setSuccess("Livro excluído com sucesso.");
       await loadBooks();
     } catch (e) {
       setError((e as Error).message);
@@ -99,6 +110,8 @@ export default function BooksPage() {
   }
 
   async function toggleAvailable(book: Book) {
+    setError("");
+    setSuccess("");
     try {
       await api(`/api/books/${book.id}`, {
         method: "PUT",
@@ -119,12 +132,12 @@ export default function BooksPage() {
 
   return (
     <>
-      <PageHeading
+      <PageTitle
         eyebrow="Acervo"
         title="Livros"
         description="Cadastre títulos, defina o autor e organize cada obra em uma ou mais categorias."
       />
-      <Feedback error={error} />
+      <Feedback error={error} success={success} />
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         <BookForm
           authors={authors}
@@ -168,7 +181,9 @@ export default function BooksPage() {
               </select>
             </label>
           </div>
-          <BookList books={books} onEdit={setEditing} onToggleAvailable={toggleAvailable} onDelete={remove} />
+          {loading ? <Loading label="Carregando livros…" /> : (
+            <BookList books={books} onEdit={setEditing} onToggleAvailable={toggleAvailable} onDelete={remove} />
+          )}
         </section>
       </div>
     </>

@@ -1,5 +1,6 @@
 import type { Loan } from "./types";
 import { LoanStatusBadge } from "./loan-status-badge";
+import { Button } from "@/components/Button";
 
 type LoanListProps = {
   loans: Loan[];
@@ -18,33 +19,43 @@ export function LoanList({ loans, onReturn, onDelete }: LoanListProps) {
   }
 
   return (
-    <div className="space-y-3">
-      {loans.map((loan) => (
-        <article key={loan.id} className="card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-bold text-emerald-950">{loan.book.title}</h2>
-            <p className="mt-1 text-sm text-black/55">
-              {loan.user.name} · Empréstimo em {formatDate(loan.loanDate)}
-              {loan.returnDate ? ` · Devolução em ${formatDate(loan.returnDate)}` : ""}
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <LoanStatusBadge status={loan.status} />
-            {loan.status === "ACTIVE" ? (
-              <button
-                onClick={() => onReturn(loan.id)}
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50"
-              >
-                Devolver
-              </button>
-            ) : (
-              <button onClick={() => onDelete(loan.id)} className="button-danger">
-                Excluir
-              </button>
-            )}
-          </div>
-        </article>
-      ))}
+    <div className="table-wrap">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th>Livro</th>
+            <th>Empréstimo</th>
+            <th>Devolução</th>
+            <th>Status</th>
+            <th className="text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {loans.map((loan) => (
+            <tr key={loan.id}>
+              <td className="font-bold text-emerald-950">{loan.user.name}</td>
+              <td className="text-black/70">{loan.book.title}</td>
+              <td className="text-black/70">{formatDate(loan.loanDate)}</td>
+              <td className="text-black/70">{formatDate(loan.returnDate)}</td>
+              <td>
+                <LoanStatusBadge status={loan.status} />
+              </td>
+              <td className="text-right">
+                {loan.status === "ACTIVE" ? (
+                  <Button variant="secondary" className="px-3 py-1.5 text-xs" onClick={() => onReturn(loan.id)}>
+                    Devolver
+                  </Button>
+                ) : (
+                  <Button variant="danger" className="px-3 py-1.5 text-xs" onClick={() => onDelete(loan.id)}>
+                    Excluir
+                  </Button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

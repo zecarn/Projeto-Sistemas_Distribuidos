@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { Button } from "@/components/Button";
 import type { Category } from "./types";
 
 type CategoryFormProps = {
@@ -37,9 +38,9 @@ export function CategoryForm({ editing, saving, onSubmit, onCancelEdit }: Catego
         Nome
         <input className="field mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
       </label>
-      <button className="button w-full" disabled={saving}>
+      <Button className="w-full" disabled={saving}>
         {saving ? "Salvando…" : editing ? "Salvar alterações" : "Cadastrar categoria"}
-      </button>
+      </Button>
     </form>
   );
 }

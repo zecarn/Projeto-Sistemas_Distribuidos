@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { Button } from "@/components/Button";
 import type { Author } from "./types";
 
 type AuthorFormProps = {
@@ -46,9 +47,9 @@ export function AuthorForm({ editing, saving, onSubmit, onCancelEdit }: AuthorFo
         Biografia
         <textarea className="field mt-1 min-h-28 resize-y" value={bio} onChange={(e) => setBio(e.target.value)} />
       </label>
-      <button className="button w-full" disabled={saving}>
+      <Button className="w-full" disabled={saving}>
         {saving ? "Salvando…" : editing ? "Salvar alterações" : "Cadastrar autor"}
-      </button>
+      </Button>
     </form>
   );
 }

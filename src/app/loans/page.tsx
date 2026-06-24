@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PageHeading } from "@/components/page-heading";
+import { PageTitle } from "@/components/PageTitle";
 import { Feedback } from "@/components/feedback";
+import { Loading } from "@/components/Loading";
 import { LoanForm } from "@/components/loans/loan-form";
 import { LoanList } from "@/components/loans/loan-list";
 import type { Loan, LoanBook, LoanStatus, LoanUser } from "@/components/loans/types";
@@ -19,7 +20,9 @@ export default function LoansPage() {
   const [users, setUsers] = useState<LoanUser[]>([]);
   const [books, setBooks] = useState<LoanBook[]>([]);
   const [statusFilter, setStatusFilter] = useState<"" | LoanStatus>("");
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
 
   const loadOptions = useCallback(async () => {
@@ -40,6 +43,8 @@ export default function LoansPage() {
       setError("");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setLoading(false);
     }
   }, [statusFilter]);
 
@@ -54,8 +59,10 @@ export default function LoansPage() {
   async function submit(data: { userId: number; bookId: number }) {
     setSaving(true);
     setError("");
+    setSuccess("");
     try {
       await api("/api/loans", { method: "POST", body: JSON.stringify(data) });
+      setSuccess("Empréstimo registrado com sucesso.");
       await Promise.all([loadLoans(), loadOptions()]);
     } catch (e) {
       setError((e as Error).message);
@@ -65,8 +72,11 @@ export default function LoansPage() {
   }
 
   async function returnLoan(id: number) {
+    setError("");
+    setSuccess("");
     try {
       await api(`/api/loans/${id}/return`, { method: "PUT" });
+      setSuccess("Devolução registrada com sucesso.");
       await Promise.all([loadLoans(), loadOptions()]);
     } catch (e) {
       setError((e as Error).message);
@@ -75,8 +85,11 @@ export default function LoansPage() {
 
   async function remove(id: number) {
     if (!confirm("Excluir este empréstimo finalizado?")) return;
+    setError("");
+    setSuccess("");
     try {
       await api(`/api/loans/${id}`, { method: "DELETE" });
+      setSuccess("Empréstimo excluído com sucesso.");
       await loadLoans();
     } catch (e) {
       setError((e as Error).message);
@@ -85,12 +98,12 @@ export default function LoansPage() {
 
   return (
     <>
-      <PageHeading
+      <PageTitle
         eyebrow="Circulação"
         title="Empréstimos"
         description="Registre novos empréstimos, controle devoluções e acompanhe o status de cada um."
       />
-      <Feedback error={error} />
+      <Feedback error={error} success={success} />
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         <LoanForm users={users} books={books} saving={saving} onSubmit={submit} />
         <section className="space-y-4">
@@ -108,7 +121,7 @@ export default function LoansPage() {
               </button>
             ))}
           </div>
-          <LoanList loans={loans} onReturn={returnLoan} onDelete={remove} />
+          {loading ? <Loading label="Carregando empréstimos…" /> : <LoanList loans={loans} onReturn={returnLoan} onDelete={remove} />}
         </section>
       </div>
     </>

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { Button } from "@/components/Button";
 import type { User } from "./types";
 
 type UserFormProps = {
@@ -52,9 +53,9 @@ export function UserForm({ editing, saving, onSubmit, onCancelEdit }: UserFormPr
           required
         />
       </label>
-      <button className="button w-full" disabled={saving}>
+      <Button className="w-full" disabled={saving}>
         {saving ? "Salvando…" : editing ? "Salvar alterações" : "Cadastrar usuário"}
-      </button>
+      </Button>
     </form>
   );
 }

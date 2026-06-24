@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { Button } from "@/components/Button";
 import type { Author, Book, Category } from "./types";
 
 type BookFormProps = {
@@ -113,9 +114,9 @@ export function BookForm({ authors, categories, editing, saving, onSubmit, onCan
           ))}
         </select>
       </label>
-      <button className="button w-full" disabled={saving || !authors.length || !categories.length}>
+      <Button className="w-full" disabled={saving || !authors.length || !categories.length}>
         {saving ? "Salvando…" : editing ? "Salvar alterações" : "Cadastrar livro"}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Button } from "@/components/Button";
 import type { LoanBook, LoanUser } from "./types";
 
 type LoanFormProps = {
@@ -51,9 +52,9 @@ export function LoanForm({ users, books, saving, onSubmit }: LoanFormProps) {
       {availableBooks.length === 0 && (
         <p className="text-sm text-black/55">Não há livros disponíveis para empréstimo no momento.</p>
       )}
-      <button className="button w-full" disabled={saving || !users.length || !availableBooks.length}>
+      <Button className="w-full" disabled={saving || !users.length || !availableBooks.length}>
         {saving ? "Registrando…" : "Registrar empréstimo"}
-      </button>
+      </Button>
     </form>
   );
 }

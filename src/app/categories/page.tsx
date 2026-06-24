@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PageHeading } from "@/components/page-heading";
+import { PageTitle } from "@/components/PageTitle";
 import { Feedback } from "@/components/feedback";
+import { Loading } from "@/components/Loading";
 import { CategoryForm } from "@/components/categories/category-form";
 import { CategoryList } from "@/components/categories/category-list";
 import type { Category } from "@/components/categories/types";
@@ -10,7 +11,9 @@ import { api } from "@/services/api-client";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
 
@@ -21,6 +24,8 @@ export default function CategoriesPage() {
       setError("");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -31,12 +36,15 @@ export default function CategoriesPage() {
   async function submit(data: { name: string }) {
     setSaving(true);
     setError("");
+    setSuccess("");
     try {
       if (editing) {
         await api(`/api/categories/${editing.id}`, { method: "PUT", body: JSON.stringify(data) });
         setEditing(null);
+        setSuccess("Categoria atualizada com sucesso.");
       } else {
         await api("/api/categories", { method: "POST", body: JSON.stringify(data) });
+        setSuccess("Categoria cadastrada com sucesso.");
       }
       await load();
     } catch (e) {
@@ -48,9 +56,12 @@ export default function CategoriesPage() {
 
   async function remove(id: number) {
     if (!confirm("Remover esta categoria?")) return;
+    setError("");
+    setSuccess("");
     try {
       await api(`/api/categories/${id}`, { method: "DELETE" });
       if (editing?.id === id) setEditing(null);
+      setSuccess("Categoria excluída com sucesso.");
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -59,13 +70,11 @@ export default function CategoriesPage() {
 
   return (
     <>
-      <PageHeading eyebrow="Organização" title="Categorias" description="Agrupe os livros por tema para facilitar a descoberta." />
-      <Feedback error={error} />
+      <PageTitle eyebrow="Organização" title="Categorias" description="Agrupe os livros por tema para facilitar a descoberta." />
+      <Feedback error={error} success={success} />
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         <CategoryForm editing={editing} saving={saving} onSubmit={submit} onCancelEdit={() => setEditing(null)} />
-        <section>
-          <CategoryList categories={categories} onEdit={setEditing} onDelete={remove} />
-        </section>
+        <section>{loading ? <Loading label="Carregando categorias…" /> : <CategoryList categories={categories} onEdit={setEditing} onDelete={remove} />}</section>
       </div>
     </>
   );
