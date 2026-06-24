@@ -1,6 +1,7 @@
 import { LoanStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ApiError, requiredString } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { bookCreateSchema, bookUpdateSchema, validate } from "@/lib/validations";
 
 const listInclude = {
   author: true,
@@ -13,35 +14,6 @@ const detailInclude = {
 } as const;
 
 export type BookFilters = { title?: string; authorId?: number; categoryId?: number };
-
-function optionalText(value: unknown, field: string) {
-  if (value === null || value === undefined || value === "") return null;
-  if (typeof value !== "string") throw new ApiError(400, `${field} inválido.`);
-  return value.trim() || null;
-}
-
-function optionalYear(value: unknown) {
-  if (value === null || value === undefined || value === "") return null;
-  const year = Number(value);
-  if (!Number.isInteger(year) || year < 0 || year > 9999) throw new ApiError(400, "publishedYear inválido.");
-  return year;
-}
-
-function validAuthorId(value: unknown) {
-  const authorId = Number(value);
-  if (!Number.isInteger(authorId) || authorId <= 0) throw new ApiError(400, "authorId inválido.");
-  return authorId;
-}
-
-function categoryIdsFrom(value: unknown) {
-  if (value === undefined) return undefined;
-  if (!Array.isArray(value)) throw new ApiError(400, "categoryIds deve ser uma lista.");
-  const categoryIds = [...new Set(value.map(Number))];
-  if (categoryIds.some((id) => !Number.isInteger(id) || id <= 0)) {
-    throw new ApiError(400, "categoryIds contém um ID inválido.");
-  }
-  return categoryIds;
-}
 
 export const bookService = {
   list(filters: BookFilters = {}) {
@@ -58,16 +30,17 @@ export const bookService = {
     return book;
   },
 
-  create(input: Record<string, unknown>) {
-    const title = requiredString(input.title, "title");
-    const authorId = validAuthorId(input.authorId);
-    const categoryIds = categoryIdsFrom(input.categoryIds) ?? [];
+  async create(input: Record<string, unknown>) {
+    const payload = validate(bookCreateSchema, input);
+    const author = await prisma.author.findUnique({ where: { id: payload.authorId }, select: { id: true } });
+    if (!author) throw new ApiError(404, "Autor não encontrado.");
+    const categoryIds = [...new Set(payload.categoryIds)];
     return prisma.book.create({
       data: {
-        title,
-        description: optionalText(input.description, "description"),
-        publishedYear: optionalYear(input.publishedYear),
-        authorId,
+        title: payload.title,
+        description: payload.description,
+        publishedYear: payload.publishedYear,
+        authorId: payload.authorId,
         categories: { create: categoryIds.map((categoryId) => ({ categoryId })) },
       },
       include: listInclude,
@@ -76,24 +49,13 @@ export const bookService = {
 
   async update(id: number, input: Record<string, unknown>) {
     await this.get(id);
-    const data: {
-      title?: string;
-      description?: string | null;
-      publishedYear?: number | null;
-      authorId?: number;
-      available?: boolean;
-    } = {};
-
-    if ("title" in input) data.title = requiredString(input.title, "title");
-    if ("description" in input) data.description = optionalText(input.description, "description");
-    if ("publishedYear" in input) data.publishedYear = optionalYear(input.publishedYear);
-    if ("authorId" in input) data.authorId = validAuthorId(input.authorId);
-    if ("available" in input) {
-      if (typeof input.available !== "boolean") throw new ApiError(400, "available deve ser booleano.");
-      data.available = input.available;
+    const payload = validate(bookUpdateSchema, input);
+    const { categoryIds: rawCategoryIds, ...data } = payload;
+    if (data.authorId !== undefined) {
+      const author = await prisma.author.findUnique({ where: { id: data.authorId }, select: { id: true } });
+      if (!author) throw new ApiError(404, "Autor não encontrado.");
     }
-
-    const categoryIds = categoryIdsFrom(input.categoryIds);
+    const categoryIds = rawCategoryIds === undefined ? undefined : [...new Set(rawCategoryIds)];
     return prisma.book.update({
       where: { id },
       data: {

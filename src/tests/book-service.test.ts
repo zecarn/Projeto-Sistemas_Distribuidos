@@ -4,6 +4,7 @@ import { LoanStatus } from "@prisma/client";
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     book: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    author: { findUnique: vi.fn() },
     bookCategory: { deleteMany: vi.fn() },
     loan: { deleteMany: vi.fn() },
     $transaction: vi.fn(),
@@ -29,13 +30,29 @@ describe("bookService", () => {
     }));
   });
 
-  it("valida título e authorId na criação", () => {
-    expect(() => bookService.create({ authorId: 1 })).toThrowError("title é obrigatório.");
-    expect(() => bookService.create({ title: "Livro", authorId: 0 })).toThrowError("authorId inválido.");
+  it("valida título e authorId na criação", async () => {
+    await expect(bookService.create({ authorId: 1 })).rejects.toThrowError("title é obrigatório.");
+    await expect(bookService.create({ title: "Livro", authorId: 0 })).rejects.toThrowError("authorId inválido.");
+    expect(prismaMock.book.create).not.toHaveBeenCalled();
+  });
+
+  it("valida publishedYear e o formato de categoryIds", async () => {
+    await expect(bookService.create({ title: "Livro", authorId: 1, publishedYear: "abc" }))
+      .rejects.toThrowError("publishedYear deve ser um número válido.");
+    await expect(bookService.create({ title: "Livro", authorId: 1, categoryIds: "1" }))
+      .rejects.toThrowError("categoryIds deve ser um array.");
+  });
+
+  it("exige que o autor exista", async () => {
+    prismaMock.author.findUnique.mockResolvedValue(null);
+    await expect(bookService.create({ title: "Livro", authorId: 99 })).rejects.toMatchObject({
+      status: 404, message: "Autor não encontrado.",
+    });
     expect(prismaMock.book.create).not.toHaveBeenCalled();
   });
 
   it("cria os vínculos de categoria", async () => {
+    prismaMock.author.findUnique.mockResolvedValue({ id: 2 });
     prismaMock.book.create.mockResolvedValue({ id: 1 });
     await bookService.create({ title: "Livro", authorId: 2, categoryIds: [3, 4] });
     expect(prismaMock.book.create).toHaveBeenCalledWith(expect.objectContaining({

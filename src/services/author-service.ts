@@ -1,12 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { ApiError, requiredString } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { authorSchema, validate } from "@/lib/validations";
 
-function data(input: Record<string, unknown>) {
-  return {
-    name: requiredString(input.name, "name"),
-    bio: typeof input.bio === "string" && input.bio.trim() ? input.bio.trim() : null,
-  };
-}
+const data = (input: Record<string, unknown>) => validate(authorSchema, input);
 
 export const authorService = {
   list: () => prisma.author.findMany({

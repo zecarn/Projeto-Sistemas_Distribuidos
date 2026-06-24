@@ -6,3 +6,5 @@ coverage/
 *.log
 .DS_Store
 prisma/*.db
+.claude
+.agents

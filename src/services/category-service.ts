@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { ApiError, requiredString } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { categorySchema, validate } from "@/lib/validations";
 
-const data = (input: Record<string, unknown>) => ({ name: requiredString(input.name, "name") });
+const data = (input: Record<string, unknown>) => validate(categorySchema, input);
 
 export const categoryService = {
   list: () => prisma.category.findMany({

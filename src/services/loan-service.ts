@@ -1,21 +1,9 @@
 import { LoanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api";
+import { loanCreateSchema, loanUpdateSchema, validate } from "@/lib/validations";
 
 const include = { user: true, book: true } as const;
-
-function positiveId(value: unknown, field: string) {
-  const id = Number(value);
-  if (!Number.isInteger(id) || id <= 0) throw new ApiError(400, `${field} inválido.`);
-  return id;
-}
-
-function validDate(value: unknown, field: string) {
-  if (typeof value !== "string" && !(value instanceof Date)) throw new ApiError(400, `${field} inválida.`);
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) throw new ApiError(400, `${field} inválida.`);
-  return date;
-}
 
 export const loanService = {
   list(status?: LoanStatus) {
@@ -33,8 +21,7 @@ export const loanService = {
   },
 
   create(input: Record<string, unknown>) {
-    const userId = positiveId(input.userId, "userId");
-    const bookId = positiveId(input.bookId, "bookId");
+    const { userId, bookId } = validate(loanCreateSchema, input);
 
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true } });
@@ -62,9 +49,11 @@ export const loanService = {
     if ("status" in input || "bookId" in input) {
       throw new ApiError(400, "Use a rota de devolução para alterar o status ou o livro do empréstimo.");
     }
-    const data: { userId?: number; loanDate?: Date } = {};
-    if ("userId" in input) data.userId = positiveId(input.userId, "userId");
-    if ("loanDate" in input) data.loanDate = validDate(input.loanDate, "loanDate");
+    const data = validate(loanUpdateSchema, input);
+    if (data.userId !== undefined) {
+      const user = await prisma.user.findUnique({ where: { id: data.userId }, select: { id: true } });
+      if (!user) throw new ApiError(404, "Usuário não encontrado.");
+    }
     return prisma.loan.update({ where: { id }, data, include });
   },
 

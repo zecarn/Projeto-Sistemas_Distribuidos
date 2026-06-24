@@ -1,15 +1,9 @@
 import { LoanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ApiError, requiredString } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { userSchema, validate } from "@/lib/validations";
 
-function userData(input: Record<string, unknown>) {
-  const name = requiredString(input.name, "name");
-  const email = requiredString(input.email, "email").toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new ApiError(400, "email inválido.");
-  }
-  return { name, email };
-}
+const userData = (input: Record<string, unknown>) => validate(userSchema, input);
 
 export const userService = {
   list: () => prisma.user.findMany({
