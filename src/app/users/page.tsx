@@ -30,7 +30,8 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => void load(), 0);
+    return () => clearTimeout(timeout);
   }, [load]);
 
   async function submit(data: { name: string; email: string }) {
@@ -77,7 +78,7 @@ export default function UsersPage() {
       />
       <Feedback error={error} success={success} />
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-        <UserForm editing={editing} saving={saving} onSubmit={submit} onCancelEdit={() => setEditing(null)} />
+        <UserForm key={editing?.id ?? "new"} editing={editing} saving={saving} onSubmit={submit} onCancelEdit={() => setEditing(null)} />
         <section>{loading ? <Loading label="Carregando usuários…" /> : <UserList users={users} onEdit={setEditing} onDelete={remove} />}</section>
       </div>
     </>

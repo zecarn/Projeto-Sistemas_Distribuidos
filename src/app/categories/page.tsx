@@ -30,7 +30,8 @@ export default function CategoriesPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => void load(), 0);
+    return () => clearTimeout(timeout);
   }, [load]);
 
   async function submit(data: { name: string }) {
@@ -73,7 +74,7 @@ export default function CategoriesPage() {
       <PageTitle eyebrow="Organização" title="Categorias" description="Agrupe os livros por tema para facilitar a descoberta." />
       <Feedback error={error} success={success} />
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-        <CategoryForm editing={editing} saving={saving} onSubmit={submit} onCancelEdit={() => setEditing(null)} />
+        <CategoryForm key={editing?.id ?? "new"} editing={editing} saving={saving} onSubmit={submit} onCancelEdit={() => setEditing(null)} />
         <section>{loading ? <Loading label="Carregando categorias…" /> : <CategoryList categories={categories} onEdit={setEditing} onDelete={remove} />}</section>
       </div>
     </>

@@ -30,7 +30,8 @@ export default function AuthorsPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => void load(), 0);
+    return () => clearTimeout(timeout);
   }, [load]);
 
   async function submit(data: { name: string; bio: string }) {
@@ -74,7 +75,7 @@ export default function AuthorsPage() {
       <PageTitle eyebrow="Pessoas" title="Autores" description="Mantenha os autores que compõem o acervo da biblioteca." />
       <Feedback error={error} success={success} />
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-        <AuthorForm editing={editing} saving={saving} onSubmit={submit} onCancelEdit={() => setEditing(null)} />
+        <AuthorForm key={editing?.id ?? "new"} editing={editing} saving={saving} onSubmit={submit} onCancelEdit={() => setEditing(null)} />
         <section>{loading ? <Loading label="Carregando autores…" /> : <AuthorList authors={authors} onEdit={setEditing} onDelete={remove} />}</section>
       </div>
     </>

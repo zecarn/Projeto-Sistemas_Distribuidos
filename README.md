@@ -1,17 +1,17 @@
 # Entrelinhas — Sistema de Biblioteca
 
-Aplicação full stack para gerenciar livros, autores e categorias. Construída com Next.js (App Router), TypeScript, Tailwind CSS, Prisma ORM, PostgreSQL e Vitest.
+Aplicação full stack para gerenciar livros, autores, categorias, usuários e empréstimos. Construída com Next.js (App Router), TypeScript, Tailwind CSS, Prisma ORM, PostgreSQL, Vitest e Docker.
 
 ## Funcionalidades
 
 - Painel com totais e disponibilidade do acervo;
-- cadastro, listagem, edição e exclusão por API de livros, autores e categorias;
+- cadastro, listagem, edição e exclusão de livros, autores, categorias, usuários e empréstimos;
 - associação de um autor a vários livros (**1:N**);
 - associação de livros a várias categorias por `BookCategory` (**N:M**);
 - registro de empréstimos entre usuários e livros;
 - controle de disponibilidade dos livros;
 - respostas HTTP consistentes para validação, conflito e registros ausentes;
-- 4 telas: painel, livros, autores e categorias.
+- 6 telas: painel, livros, autores, categorias, usuários e empréstimos.
 
 ## Arquitetura
 
@@ -30,6 +30,16 @@ prisma/
 ```
 
 O fluxo do backend é `Route Handler → service → Prisma → PostgreSQL`. Os handlers cuidam de HTTP; os services concentram operações de domínio e persistência.
+
+## Modelo de dados e relações
+
+O banco possui seis tabelas principais: `User`, `Author`, `Book`, `Category`, `BookCategory` e `Loan`.
+
+- **Author 1:N Book:** um autor pode possuir vários livros; cada livro possui um autor;
+- **Book N:M Category:** livros e categorias relacionam-se pela tabela explícita `BookCategory`;
+- **User 1:N Loan:** um usuário pode possuir vários empréstimos;
+- **Book 1:N Loan:** um livro mantém seu histórico de empréstimos;
+- `LoanStatus` controla os estados `ACTIVE` e `RETURNED`.
 
 ## Pré-requisitos
 
@@ -157,6 +167,17 @@ O comando `docker compose down` preserva os dados. Para também remover os volum
 | GET | `/api/categories/:id` | Busca categoria |
 | PUT | `/api/categories/:id` | Atualiza categoria |
 | DELETE | `/api/categories/:id` | Exclui categoria |
+| GET | `/api/users` | Lista usuários |
+| POST | `/api/users` | Cria usuário |
+| GET | `/api/users/:id` | Busca usuário e empréstimos |
+| PUT | `/api/users/:id` | Atualiza usuário |
+| DELETE | `/api/users/:id` | Exclui usuário sem empréstimo ativo |
+| GET | `/api/loans` | Lista empréstimos e filtra por status |
+| POST | `/api/loans` | Registra empréstimo |
+| GET | `/api/loans/:id` | Busca empréstimo |
+| PUT | `/api/loans/:id` | Atualiza empréstimo |
+| PUT | `/api/loans/:id/return` | Registra devolução |
+| DELETE | `/api/loans/:id` | Exclui empréstimo devolvido |
 | GET | `/api/stats` | Retorna indicadores |
 
 Exemplo para criar um livro:

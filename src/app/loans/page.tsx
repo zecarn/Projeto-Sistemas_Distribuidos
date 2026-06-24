@@ -49,11 +49,13 @@ export default function LoansPage() {
   }, [statusFilter]);
 
   useEffect(() => {
-    loadOptions();
+    const timeout = setTimeout(() => void loadOptions(), 0);
+    return () => clearTimeout(timeout);
   }, [loadOptions]);
 
   useEffect(() => {
-    loadLoans();
+    const timeout = setTimeout(() => void loadLoans(), 0);
+    return () => clearTimeout(timeout);
   }, [loadLoans]);
 
   async function submit(data: { userId: number; bookId: number }) {

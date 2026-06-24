@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { Button } from "@/components/Button";
 import type { Author, Book, Category } from "./types";
 
@@ -21,19 +21,13 @@ type BookFormProps = {
 };
 
 export function BookForm({ authors, categories, editing, saving, onSubmit, onCancelEdit }: BookFormProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [publishedYear, setPublishedYear] = useState("");
-  const [authorId, setAuthorId] = useState("");
-  const [categoryIds, setCategoryIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    setTitle(editing?.title ?? "");
-    setDescription(editing?.description ?? "");
-    setPublishedYear(editing?.publishedYear ? String(editing.publishedYear) : "");
-    setAuthorId(editing ? String(editing.author.id) : "");
-    setCategoryIds(editing ? editing.categories.map(({ category }) => String(category.id)) : []);
-  }, [editing]);
+  const [title, setTitle] = useState(editing?.title ?? "");
+  const [description, setDescription] = useState(editing?.description ?? "");
+  const [publishedYear, setPublishedYear] = useState(editing?.publishedYear ? String(editing.publishedYear) : "");
+  const [authorId, setAuthorId] = useState(editing ? String(editing.author.id) : "");
+  const [categoryIds, setCategoryIds] = useState<string[]>(
+    editing ? editing.categories.map(({ category }) => String(category.id)) : [],
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

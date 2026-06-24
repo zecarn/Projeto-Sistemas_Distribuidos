@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { Button } from "@/components/Button";
 import type { Author } from "./types";
 
@@ -12,13 +12,8 @@ type AuthorFormProps = {
 };
 
 export function AuthorForm({ editing, saving, onSubmit, onCancelEdit }: AuthorFormProps) {
-  const [name, setName] = useState("");
-  const [bio, setBio] = useState("");
-
-  useEffect(() => {
-    setName(editing?.name ?? "");
-    setBio(editing?.bio ?? "");
-  }, [editing]);
+  const [name, setName] = useState(editing?.name ?? "");
+  const [bio, setBio] = useState(editing?.bio ?? "");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

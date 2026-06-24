@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { Button } from "@/components/Button";
 import type { Category } from "./types";
 
@@ -12,11 +12,7 @@ type CategoryFormProps = {
 };
 
 export function CategoryForm({ editing, saving, onSubmit, onCancelEdit }: CategoryFormProps) {
-  const [name, setName] = useState("");
-
-  useEffect(() => {
-    setName(editing?.name ?? "");
-  }, [editing]);
+  const [name, setName] = useState(editing?.name ?? "");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -51,7 +51,8 @@ export default function BooksPage() {
   }, [search, authorFilter, categoryFilter]);
 
   useEffect(() => {
-    loadOptions();
+    const timeout = setTimeout(() => void loadOptions(), 0);
+    return () => clearTimeout(timeout);
   }, [loadOptions]);
 
   useEffect(() => {
@@ -140,6 +141,7 @@ export default function BooksPage() {
       <Feedback error={error} success={success} />
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         <BookForm
+          key={editing?.id ?? "new"}
           authors={authors}
           categories={categories}
           editing={editing}

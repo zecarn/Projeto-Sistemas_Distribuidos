@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { Button } from "@/components/Button";
 import type { User } from "./types";
 
@@ -12,13 +12,8 @@ type UserFormProps = {
 };
 
 export function UserForm({ editing, saving, onSubmit, onCancelEdit }: UserFormProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    setName(editing?.name ?? "");
-    setEmail(editing?.email ?? "");
-  }, [editing]);
+  const [name, setName] = useState(editing?.name ?? "");
+  const [email, setEmail] = useState(editing?.email ?? "");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
