@@ -31,7 +31,14 @@ describe("categoryService", () => {
     expect(prismaMock.category.create).not.toHaveBeenCalled();
   });
 
-  it("impede nomes duplicados", async () => {
+  it("deve criar categoria", async () => {
+    prismaMock.category.findUnique.mockResolvedValue(null);
+    prismaMock.category.create.mockResolvedValue({ id: 1, name: "Fantasia" });
+    await expect(categoryService.create({ name: "Fantasia" })).resolves.toMatchObject({ id: 1 });
+    expect(prismaMock.category.create).toHaveBeenCalledWith({ data: { name: "Fantasia" } });
+  });
+
+  it("não deve criar categoria duplicada", async () => {
     prismaMock.category.findUnique.mockResolvedValue({ id: 1, name: "Romance" });
     await expect(categoryService.create({ name: "Romance" })).rejects.toMatchObject({
       status: 409, message: "Já existe uma categoria com esse nome.",

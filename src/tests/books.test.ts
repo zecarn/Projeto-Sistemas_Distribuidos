@@ -18,7 +18,7 @@ import { bookService } from "@/services/book-service";
 describe("bookService", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("compõe filtros de título, autor e categoria", async () => {
+  it("deve listar livros", async () => {
     prismaMock.book.findMany.mockResolvedValue([]);
     await bookService.list({ title: "dom", authorId: 1, categoryId: 2 });
     expect(prismaMock.book.findMany).toHaveBeenCalledWith(expect.objectContaining({
@@ -30,8 +30,12 @@ describe("bookService", () => {
     }));
   });
 
-  it("valida título e authorId na criação", async () => {
+  it("não deve criar livro sem título", async () => {
     await expect(bookService.create({ authorId: 1 })).rejects.toThrowError("title é obrigatório.");
+    expect(prismaMock.book.create).not.toHaveBeenCalled();
+  });
+
+  it("deve validar authorId na criação", async () => {
     await expect(bookService.create({ title: "Livro", authorId: 0 })).rejects.toThrowError("authorId inválido.");
     expect(prismaMock.book.create).not.toHaveBeenCalled();
   });
@@ -51,7 +55,7 @@ describe("bookService", () => {
     expect(prismaMock.book.create).not.toHaveBeenCalled();
   });
 
-  it("cria os vínculos de categoria", async () => {
+  it("deve criar livro válido", async () => {
     prismaMock.author.findUnique.mockResolvedValue({ id: 2 });
     prismaMock.book.create.mockResolvedValue({ id: 1 });
     await bookService.create({ title: "Livro", authorId: 2, categoryIds: [3, 4] });
@@ -75,7 +79,7 @@ describe("bookService", () => {
     }));
   });
 
-  it("impede exclusão quando há empréstimo ativo", async () => {
+  it("não deve excluir livro com empréstimo ativo", async () => {
     prismaMock.book.findUnique.mockResolvedValue({
       id: 1, loans: [{ id: 10, status: LoanStatus.ACTIVE }], categories: [], author: {},
     });

@@ -42,7 +42,7 @@ describe("loanService", () => {
     expect(txMock.book.findUnique).not.toHaveBeenCalled();
   });
 
-  it("impede empréstimo de livro indisponível", async () => {
+  it("não deve emprestar livro indisponível", async () => {
     txMock.user.findUnique.mockResolvedValue({ id: 1 });
     txMock.book.findUnique.mockResolvedValue({ id: 2, available: false });
     await expect(loanService.create({ userId: 1, bookId: 2 })).rejects.toMatchObject({
@@ -51,7 +51,7 @@ describe("loanService", () => {
     expect(txMock.loan.create).not.toHaveBeenCalled();
   });
 
-  it("reserva o livro e cria o empréstimo na mesma transação", async () => {
+  it("deve criar empréstimo se livro estiver disponível e marcar o livro como indisponível", async () => {
     txMock.user.findUnique.mockResolvedValue({ id: 1 });
     txMock.book.findUnique.mockResolvedValue({ id: 2, available: true });
     txMock.book.updateMany.mockResolvedValue({ count: 1 });
@@ -65,7 +65,7 @@ describe("loanService", () => {
     }));
   });
 
-  it("devolve o livro e finaliza o empréstimo na mesma transação", async () => {
+  it("deve devolver livro e marcá-lo como disponível", async () => {
     txMock.loan.findUnique.mockResolvedValue({ id: 3, bookId: 2, status: LoanStatus.ACTIVE });
     txMock.loan.updateMany.mockResolvedValue({ count: 1 });
     txMock.book.update.mockResolvedValue({ id: 2, available: true });
@@ -76,6 +76,15 @@ describe("loanService", () => {
       data: expect.objectContaining({ status: LoanStatus.RETURNED, returnDate: expect.any(Date) }),
     }));
     expect(txMock.book.update).toHaveBeenCalledWith({ where: { id: 2 }, data: { available: true } });
+  });
+
+  it("não deve devolver empréstimo já devolvido", async () => {
+    txMock.loan.findUnique.mockResolvedValue({ id: 3, bookId: 2, status: LoanStatus.RETURNED });
+    await expect(loanService.returnBook(3)).rejects.toMatchObject({
+      status: 409, message: "Este empréstimo já foi devolvido.",
+    });
+    expect(txMock.loan.updateMany).not.toHaveBeenCalled();
+    expect(txMock.book.update).not.toHaveBeenCalled();
   });
 
   it("só exclui empréstimos devolvidos", async () => {

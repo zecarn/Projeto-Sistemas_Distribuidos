@@ -34,7 +34,15 @@ describe("authorService", () => {
     expect(prismaMock.author.create).not.toHaveBeenCalled();
   });
 
-  it("não exclui autor com livros vinculados", async () => {
+  it("deve criar autor", async () => {
+    prismaMock.author.create.mockResolvedValue({ id: 1, name: "George Orwell", bio: null });
+    await expect(authorService.create({ name: "George Orwell" })).resolves.toMatchObject({ id: 1 });
+    expect(prismaMock.author.create).toHaveBeenCalledWith({
+      data: { name: "George Orwell", bio: null },
+    });
+  });
+
+  it("não deve excluir autor com livros vinculados", async () => {
     prismaMock.author.findUnique.mockResolvedValue({ id: 1, name: "Machado", bio: null, books: [{ id: 1 }] });
     await expect(authorService.remove(1)).rejects.toMatchObject<ApiError>({
       status: 409,
