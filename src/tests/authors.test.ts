@@ -44,7 +44,7 @@ describe("authorService", () => {
 
   it("não deve excluir autor com livros vinculados", async () => {
     prismaMock.author.findUnique.mockResolvedValue({ id: 1, name: "Machado", bio: null, books: [{ id: 1 }] });
-    await expect(authorService.remove(1)).rejects.toMatchObject<ApiError>({
+    await expect(authorService.remove(1)).rejects.toMatchObject({
       status: 409,
       message: "Não é possível excluir o autor porque há livros vinculados.",
     });
