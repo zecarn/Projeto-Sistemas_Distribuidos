@@ -1,19 +1,46 @@
 services:
+  # Banco relacional persistente da aplicação.
   postgres:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: biblioteca
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-biblioteca_db}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - biblioteca_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d biblioteca"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # Next.js em desenvolvimento, com hot reload e Prisma Client gerado no Linux.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-biblioteca_db}?schema=public
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+    command: sh -c "npm install && npx prisma generate && npm run dev -- --hostname 0.0.0.0"
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - app_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
-  biblioteca_data:
+  # Mantém dados do PostgreSQL e dependências Linux entre reinicializações.
+  postgres_data:
+  app_node_modules:

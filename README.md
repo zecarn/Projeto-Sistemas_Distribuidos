@@ -89,6 +89,55 @@ npm run build
 npm start
 ```
 
+## Executando com Docker
+
+O Docker Compose inicia somente os serviços essenciais: a aplicação Next.js e o PostgreSQL. O banco usa um volume persistente, enquanto o código-fonte é montado no container da aplicação para manter o hot reload.
+
+Primeiro, crie o arquivo local de ambiente:
+
+```bash
+cp .env.example .env
+```
+
+No PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+No `.env`, `DATABASE_URL` usa `localhost` e continua válida para executar o Next.js fora do Docker. Dentro do container, o Compose sobrescreve essa variável para usar o serviço `postgres`:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@postgres:5432/biblioteca_db?schema=public"
+```
+
+Construa as imagens e inicie os dois serviços:
+
+```bash
+docker compose up --build
+```
+
+A aplicação estará disponível em [http://localhost:3000](http://localhost:3000). Para iniciar em segundo plano, use `docker compose up --build -d`.
+
+Na primeira execução, aplique as migrations e, opcionalmente, carregue os dados iniciais:
+
+```bash
+docker compose exec app npx prisma generate
+docker compose exec app npx prisma migrate dev
+docker compose exec app npx prisma db seed
+```
+
+Comandos úteis:
+
+```bash
+docker compose logs -f app       # acompanha os logs do Next.js
+docker compose logs -f postgres  # acompanha os logs do banco
+docker compose ps                # mostra o estado dos containers
+docker compose down              # para e remove os containers
+```
+
+O comando `docker compose down` preserva os dados. Para também remover os volumes e apagar o banco do ambiente Docker, use `docker compose down -v` com cuidado.
+
 ## API REST
 
 | Método | Endpoint | Operação |
