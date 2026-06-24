@@ -9,7 +9,10 @@ function data(input: Record<string, unknown>) {
 }
 
 export const authorService = {
-  list: () => prisma.author.findMany({ include: { _count: { select: { books: true } } }, orderBy: { name: "asc" } }),
+  list: () => prisma.author.findMany({
+    include: { books: true, _count: { select: { books: true } } },
+    orderBy: { name: "asc" },
+  }),
   async get(id: number) {
     const author = await prisma.author.findUnique({ where: { id }, include: { books: true } });
     if (!author) throw new ApiError(404, "Autor não encontrado.");
@@ -21,7 +24,10 @@ export const authorService = {
     return prisma.author.update({ where: { id }, data: data(input) });
   },
   async remove(id: number) {
-    await this.get(id);
+    const author = await this.get(id);
+    if (author.books.length > 0) {
+      throw new ApiError(409, "Não é possível excluir o autor porque há livros vinculados.");
+    }
     return prisma.author.delete({ where: { id } });
   },
 };
