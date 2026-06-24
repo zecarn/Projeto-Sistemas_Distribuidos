@@ -7,18 +7,24 @@ type Context = { params: Promise<{ id: string }> };
 export async function GET(_: Request, { params }: Context) {
   try {
     return NextResponse.json(await categoryService.get(parseId((await params).id)));
-  } catch (error) { return handleApiError(error); }
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function PUT(request: Request, { params }: Context) {
   try {
     return NextResponse.json(await categoryService.update(parseId((await params).id), await readJson(request)));
-  } catch (error) { return handleApiError(error); }
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function DELETE(_: Request, { params }: Context) {
   try {
-    await categoryService.remove(parseId((await params).id));
-    return new NextResponse(null, { status: 204 });
-  } catch (error) { return handleApiError(error); }
+    const category = await categoryService.remove(parseId((await params).id));
+    return NextResponse.json({ message: "Categoria excluída com sucesso.", category });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
